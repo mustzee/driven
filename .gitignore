@@ -46,3 +46,6 @@ Thumbs.db
 
 # Docker
 *.log
+
+# Generated files
+graph_analysis_result.json
