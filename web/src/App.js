@@ -4,6 +4,7 @@ import DeckBoard from './components/DeckBoard';
 import GaugePanel from './components/GaugePanel';
 import CardGenerator from './components/CardGenerator';
 import NetworkGraph from './components/NetworkGraph';
+import OnboardingFlow from './components/OnboardingFlow';
 import axios from 'axios';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
@@ -13,6 +14,7 @@ function App() {
   const [gauges, setGauges] = useState([]);
   const [graphData, setGraphData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(true);
 
   // 초기 덱 생성
   useEffect(() => {
@@ -120,11 +122,39 @@ function App() {
     }
   };
 
+  const handleOnboardingComplete = async (cards) => {
+    setShowOnboarding(false);
+
+    // 온보딩 카드들 추가
+    for (const cardData of cards) {
+      await addCard(cardData);
+    }
+  };
+
+  const handleOnboardingSkip = () => {
+    setShowOnboarding(false);
+  };
+
   return (
     <div className="App">
+      {showOnboarding && (
+        <OnboardingFlow
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
+      )}
+
       <header className="app-header">
         <h1>🎴 Cognitive Deck</h1>
         <p className="subtitle">데이터 기반 의사결정 시스템</p>
+        {!showOnboarding && (
+          <button
+            className="btn-restart-onboarding"
+            onClick={() => setShowOnboarding(true)}
+          >
+            ↻ 온보딩 다시 시작
+          </button>
+        )}
       </header>
 
       <div className="app-container">

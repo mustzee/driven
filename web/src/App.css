@@ -9,6 +9,13 @@
   padding: 1.5rem 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-header > div {
+  flex: 1;
 }
 
 .app-header h1 {
@@ -20,6 +27,22 @@
 .subtitle {
   color: #666;
   font-size: 0.9rem;
+}
+
+.btn-restart-onboarding {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-restart-onboarding:hover {
+  background: #667eea;
+  color: white;
 }
 
 .app-container {
