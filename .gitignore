@@ -21,6 +21,7 @@ build/
 *.out
 vendor/
 go.sum
+bin/
 
 # Node/React
 node_modules/
