@@ -43,6 +43,9 @@ func main() {
 
 		// AI 카드 생성
 		v1.POST("/ai/generate-cards", generateCards)
+
+		// 그래프 분석
+		v1.POST("/graph/analyze", analyzeGraphFromText)
 	}
 
 	// 서버 시작

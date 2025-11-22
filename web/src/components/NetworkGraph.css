@@ -1,0 +1,102 @@
+.network-graph-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.graph-header {
+  margin-bottom: 1rem;
+}
+
+.graph-header h3 {
+  font-size: 1.3rem;
+  color: #333;
+  margin-bottom: 0.3rem;
+}
+
+.graph-subtitle {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.network-svg {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.node-details {
+  position: absolute;
+  top: 80px;
+  left: 20px;
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  min-width: 200px;
+  max-width: 300px;
+  z-index: 10;
+}
+
+.node-details h4 {
+  font-size: 1.1rem;
+  color: #667eea;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+}
+
+.detail-label {
+  color: #666;
+  font-weight: 500;
+}
+
+.detail-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.detail-badge.mainstream {
+  background: #667eea;
+  color: white;
+}
+
+.detail-badge.substream {
+  background: #e0e0e0;
+  color: #666;
+}
+
+/* SVG 스타일 */
+.links line {
+  transition: stroke-opacity 0.3s;
+}
+
+.nodes circle {
+  transition: all 0.3s ease;
+}
+
+.nodes circle:hover {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.legend {
+  pointer-events: none;
+}
+
+.legend text {
+  fill: #333;
+  font-family: inherit;
+}

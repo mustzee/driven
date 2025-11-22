@@ -45,6 +45,14 @@
   height: fit-content;
 }
 
+.graph-section {
+  margin-top: 1.5rem;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
 @media (max-width: 1024px) {
   .app-container {
     grid-template-columns: 1fr;

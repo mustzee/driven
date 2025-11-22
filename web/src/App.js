@@ -3,6 +3,7 @@ import './App.css';
 import DeckBoard from './components/DeckBoard';
 import GaugePanel from './components/GaugePanel';
 import CardGenerator from './components/CardGenerator';
+import NetworkGraph from './components/NetworkGraph';
 import axios from 'axios';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
@@ -10,6 +11,7 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1'
 function App() {
   const [deck, setDeck] = useState(null);
   const [gauges, setGauges] = useState([]);
+  const [graphData, setGraphData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // 초기 덱 생성
@@ -92,14 +94,18 @@ function App() {
   const generateCardsFromText = async (text) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE}/ai/generate-cards`, {
+      // 그래프 분석 먼저 실행
+      const graphResponse = await axios.post(`${API_BASE}/graph/analyze`, {
         text,
-        goal: deck?.goal || '',
-        max_cards: 7
+        max_cards: 10
       });
 
+      if (graphResponse.data.graph) {
+        setGraphData(graphResponse.data.graph);
+      }
+
       // 생성된 카드들 추가
-      const generatedCards = response.data.generated_cards || [];
+      const generatedCards = graphResponse.data.cards || [];
       for (const cardData of generatedCards) {
         await addCard({
           id: `ai-${Date.now()}-${Math.random()}`,
@@ -142,6 +148,13 @@ function App() {
           <GaugePanel gauges={gauges} deck={deck} />
         </div>
       </div>
+
+      {/* 그래프 시각화 (전체 너비) */}
+      {graphData && graphData.nodes && graphData.nodes.length > 0 && (
+        <div className="graph-section">
+          <NetworkGraph graphData={graphData} />
+        </div>
+      )}
     </div>
   );
 }
