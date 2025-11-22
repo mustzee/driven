@@ -50,3 +50,5 @@ Thumbs.db
 
 # Generated files
 graph_analysis_result.json
+test_*.json
+decision_history.json
