@@ -5,6 +5,7 @@ import GaugePanel from './components/GaugePanel';
 import CardGenerator from './components/CardGenerator';
 import NetworkGraph from './components/NetworkGraph';
 import OnboardingFlow from './components/OnboardingFlow';
+import DecisionFramework from './components/DecisionFramework';
 import axios from 'axios';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
@@ -185,6 +186,14 @@ function App() {
           <NetworkGraph graphData={graphData} />
         </div>
       )}
+
+      {/* Decision Framework (전체 너비) */}
+      <div className="decision-section">
+        <DecisionFramework
+          currentCards={deck?.cards || []}
+          onAddCard={addCard}
+        />
+      </div>
     </div>
   );
 }

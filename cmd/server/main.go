@@ -50,6 +50,9 @@ func main() {
 
 		// 그래프 분석
 		v1.POST("/graph/analyze", analyzeGraphFromText)
+
+		// 의사결정 프레임워크
+		v1.POST("/decision/analyze", analyzeDecision)
 	}
 
 	// 서버 시작
@@ -291,6 +294,87 @@ print(json.dumps(result, ensure_ascii=False))
 
 	// 텍스트를 stdin으로 전달
 	cmd.Stdin = bytes.NewBufferString(text)
+
+	// 출력 받기
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+
+	// JSON 파싱
+	var result map[string]interface{}
+	if err := json.Unmarshal(output, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// analyzeDecision 의사결정 프레임워크 분석
+func analyzeDecision(c *gin.Context) {
+	var req struct {
+		Goal         string                   `json:"goal" binding:"required"`
+		Options      []string                 `json:"options" binding:"required"`
+		CurrentCards []map[string]interface{} `json:"current_cards"`
+		Category     string                   `json:"category"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Python 스크립트 호출
+	result, err := runPythonDecisionAnalysis(req.Goal, req.Options, req.CurrentCards, req.Category)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// runPythonDecisionAnalysis Python 의사결정 분석 실행
+func runPythonDecisionAnalysis(goal string, options []string, currentCards []map[string]interface{}, category string) (map[string]interface{}, error) {
+	// 입력 데이터를 JSON으로 직렬화
+	inputData := map[string]interface{}{
+		"goal":          goal,
+		"options":       options,
+		"current_cards": currentCards,
+		"category":      category,
+	}
+
+	inputJSON, err := json.Marshal(inputData)
+	if err != nil {
+		return nil, err
+	}
+
+	// Python 스크립트
+	pythonScript := `
+import sys
+import json
+sys.path.append('python')
+
+from decision_framework import analyze_decision
+
+# stdin에서 JSON 읽기
+input_data = json.loads(sys.stdin.read())
+
+# 분석 실행
+result = analyze_decision(
+    goal=input_data["goal"],
+    options=input_data["options"],
+    current_cards=input_data.get("current_cards"),
+    category=input_data.get("category")
+)
+
+print(json.dumps(result, ensure_ascii=False))
+`
+
+	cmd := exec.Command("python3", "-c", pythonScript)
+
+	// JSON 데이터를 stdin으로 전달
+	cmd.Stdin = bytes.NewBufferString(string(inputJSON))
 
 	// 출력 받기
 	output, err := cmd.CombinedOutput()
