@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cognitive-deck
+  labels:
+    name: cognitive-deck
