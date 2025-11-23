@@ -31,6 +31,16 @@ class DecisionFrameworkTemplate:
     questions: List[Dict[str, Any]] = field(default_factory=list)
     analysis_method: str = "weighted_sum"
 
+    # 가이드 정보
+    pros: List[str] = field(default_factory=list)
+    cons: List[str] = field(default_factory=list)
+    when_to_use: List[str] = field(default_factory=list)
+    when_not_to_use: List[str] = field(default_factory=list)
+
+    # 카드 요구사항
+    required_cards: int = 5
+    card_template: List[Dict[str, Any]] = field(default_factory=list)
+
 
 class FrameworkLibrary:
     """의사결정 프레임워크 라이브러리"""
@@ -141,6 +151,69 @@ class FrameworkLibrary:
             name="SWOT Analysis",
             description="강점, 약점, 기회, 위협 분석을 통한 전략 수립",
             category="strategy",
+
+            # 장점
+            pros=[
+                "✅ 가장 대중적이고 직관적인 프레임워크",
+                "✅ 빠른 시간 내에 전략적 상황 파악 가능",
+                "✅ 내부(강점/약점)와 외부(기회/위협) 동시 고려",
+                "✅ 팀 워크샵이나 브레인스토밍에 적합",
+            ],
+
+            # 단점
+            cons=[
+                "❌ 너무 단순해서 깊이있는 분석은 어려움",
+                "❌ 주관적 판단에 의존, 데이터 검증 필요",
+                "❌ 실행 계획으로 연결이 약함",
+                "❌ 요소 간 우선순위 결정이 어려움",
+            ],
+
+            # 적합한 상황
+            when_to_use=[
+                "🎯 새로운 사업이나 프로젝트 시작 전 전략 수립",
+                "🎯 빠르게 현재 상황을 전체적으로 파악해야 할 때",
+                "🎯 팀원들과 함께 전략을 논의할 때",
+                "🎯 복잡하지 않은 의사결정",
+            ],
+
+            # 부적합한 상황
+            when_not_to_use=[
+                "⚠️ 정량적 분석이 필요한 투자 의사결정",
+                "⚠️ 매우 복잡한 다변수 문제",
+                "⚠️ 즉각적인 실행 계획이 필요한 경우",
+            ],
+
+            # 필요한 최소 카드 수
+            required_cards=4,
+
+            # 카드 템플릿
+            card_template=[
+                {
+                    "dimension": "Strengths",
+                    "description": "우리의 강점 3가지",
+                    "examples": ["독보적인 기술력", "강력한 브랜드", "충성도 높은 고객층"],
+                    "min_cards": 1
+                },
+                {
+                    "dimension": "Weaknesses",
+                    "description": "우리의 약점 3가지",
+                    "examples": ["제한된 예산", "부족한 인력", "느린 의사결정"],
+                    "min_cards": 1
+                },
+                {
+                    "dimension": "Opportunities",
+                    "description": "시장 기회 3가지",
+                    "examples": ["신규 시장 성장", "규제 완화", "기술 트렌드"],
+                    "min_cards": 1
+                },
+                {
+                    "dimension": "Threats",
+                    "description": "외부 위협 3가지",
+                    "examples": ["경쟁 심화", "경기 침체", "대체재 등장"],
+                    "min_cards": 1
+                },
+            ],
+
             dimensions=[
                 FrameworkDimension(
                     name="Strengths (강점)",
@@ -382,6 +455,61 @@ class FrameworkLibrary:
             name="ICE Score (Impact-Confidence-Ease)",
             description="프로젝트/아이디어 우선순위 결정",
             category="prioritization",
+
+            # 장점
+            pros=[
+                "✅ 빠르고 간단한 우선순위 결정",
+                "✅ 주관적 판단을 구조화",
+                "✅ 팀 합의를 쉽게 도출",
+                "✅ 적은 데이터로도 실행 가능",
+            ],
+
+            # 단점
+            cons=[
+                "❌ 정량적 데이터 부족 시 주관적",
+                "❌ 장기적 영향 평가 어려움",
+                "❌ 리스크 고려 부족",
+            ],
+
+            # 적합한 상황
+            when_to_use=[
+                "🎯 여러 아이디어/프로젝트 중 우선순위 결정",
+                "🎯 빠른 의사결정이 필요할 때",
+                "🎯 스타트업이나 애자일 팀",
+                "🎯 제한된 리소스 배분",
+            ],
+
+            # 부적합한 상황
+            when_not_to_use=[
+                "⚠️ 고위험 대규모 투자 결정",
+                "⚠️ 정밀한 ROI 계산이 필요한 경우",
+            ],
+
+            # 필요한 최소 카드 수
+            required_cards=3,
+
+            # 카드 템플릿
+            card_template=[
+                {
+                    "dimension": "Impact",
+                    "description": "성공 시 임팩트 (1-10)",
+                    "examples": ["게임 체인저급 (10)", "중간 임팩트 (5)", "미미한 임팩트 (1)"],
+                    "min_cards": 1
+                },
+                {
+                    "dimension": "Confidence",
+                    "description": "성공 확신도 (1-10)",
+                    "examples": ["매우 확신 (10)", "중간 확신 (5)", "불확실 (1)"],
+                    "min_cards": 1
+                },
+                {
+                    "dimension": "Ease",
+                    "description": "실행 용이성 (1-10)",
+                    "examples": ["1주 이내 (10)", "1-3개월 (5)", "6개월+ (1)"],
+                    "min_cards": 1
+                },
+            ],
+
             dimensions=[
                 FrameworkDimension(
                     name="Impact (영향도)",

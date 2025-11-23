@@ -178,6 +178,12 @@ if framework:
         "name": framework.name,
         "description": framework.description,
         "category": framework.category,
+        "pros": framework.pros,
+        "cons": framework.cons,
+        "when_to_use": framework.when_to_use,
+        "when_not_to_use": framework.when_not_to_use,
+        "required_cards": framework.required_cards,
+        "card_template": framework.card_template,
         "dimensions": [
             {
                 "name": dim.name,
