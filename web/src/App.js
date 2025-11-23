@@ -6,6 +6,7 @@ import CardGenerator from './components/CardGenerator';
 import NetworkGraph from './components/NetworkGraph';
 import OnboardingFlow from './components/OnboardingFlow';
 import DecisionFramework from './components/DecisionFramework';
+import DecisionDashboard from './components/DecisionDashboard';
 import axios from 'axios';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
@@ -186,6 +187,22 @@ function App() {
           <NetworkGraph graphData={graphData} />
         </div>
       )}
+
+      {/* Decision Dashboard (전체 너비) - NEW! */}
+      <div className="decision-section">
+        <DecisionDashboard
+          currentCards={deck?.cards || []}
+          onOptimizedCards={(optimizedCards) => {
+            // 최적화된 카드로 덱 업데이트
+            if (deck) {
+              setDeck(prev => ({
+                ...prev,
+                cards: optimizedCards
+              }));
+            }
+          }}
+        />
+      </div>
 
       {/* Decision Framework (전체 너비) */}
       <div className="decision-section">

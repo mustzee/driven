@@ -53,6 +53,29 @@ func main() {
 
 		// 의사결정 프레임워크
 		v1.POST("/decision/analyze", analyzeDecision)
+
+		// 카드 최적화
+		v1.POST("/cards/optimize", optimizeCards)
+
+		// 프레임워크 라이브러리
+		v1.GET("/frameworks", listFrameworks)
+		v1.GET("/frameworks/:id", getFramework)
+
+		// 심층 분석
+		v1.POST("/deep-analysis", runDeepAnalysis)
+
+		// 통합 의사결정 시스템
+		system := v1.Group("/system")
+		{
+			system.POST("/decisions", createDecision)
+			system.GET("/decisions", listDecisions)
+			system.GET("/decisions/:id", getDecision)
+			system.POST("/decisions/:id/cards", addCardsToDecision)
+			system.POST("/decisions/:id/framework", selectFramework)
+			system.POST("/decisions/:id/analyze", analyzeDecisionSystem)
+			system.POST("/decisions/:id/decide", makeDecision)
+			system.GET("/insights", getInsights)
+		}
 	}
 
 	// 서버 시작
