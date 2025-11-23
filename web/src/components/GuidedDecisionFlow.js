@@ -34,7 +34,7 @@ const GuidedDecisionFlow = () => {
 
   const loadFrameworks = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/v1/frameworks');
+      const response = await fetch('/api/v1/frameworks');
       const data = await response.json();
       setFrameworks(data.frameworks || []);
     } catch (error) {
@@ -46,7 +46,7 @@ const GuidedDecisionFlow = () => {
   const handleSelectFramework = async (frameworkId) => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/v1/frameworks/${frameworkId}`);
+      const response = await fetch(`/api/v1/frameworks/${frameworkId}`);
       const data = await response.json();
       setSelectedFramework(data);
       setCurrentStep(2); // 다음 단계로
@@ -88,7 +88,7 @@ const GuidedDecisionFlow = () => {
     setLoading(true);
     try {
       // 카드 최적화 먼저
-      const optimizeResponse = await fetch('http://localhost:8080/api/v1/cards/optimize', {
+      const optimizeResponse = await fetch('/api/v1/cards/optimize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -107,7 +107,7 @@ const GuidedDecisionFlow = () => {
       }
 
       // Decision Framework 분석
-      const analysisResponse = await fetch('http://localhost:8080/api/v1/decision/analyze', {
+      const analysisResponse = await fetch('/api/v1/decision/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
