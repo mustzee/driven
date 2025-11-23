@@ -2,25 +2,103 @@ import React, { useState, useEffect } from 'react';
 import './GuidedDecisionFlow.css';
 
 /**
- * GuidedDecisionFlow - 완전 가이드형 의사결정 시스템 (Modern Monochrome)
- *
- * 5단계 워크플로우:
- * 1. 프레임워크 선택 (토글, How to Use)
- * 2. 프레임워크별 특화 UI (SWOT 4분할, Porter's 5 Forces 등)
- * 3. 카드 작성
- * 4. 자동 분석
- * 5. 결과 및 추천
+ * 🎴 Cognitive Deck - Framework-Specific Decision Making System
+ * 
+ * No Card Format - Direct Framework-Specific Input Methods
+ * 1. SWOT: 4-quadrant direct input
+ * 2. Porter's 5 Forces: 5-area textarea
+ * 3. BCG Matrix: Business unit placement
+ * 4. ICE/RICE: Slider-based scoring
+ * 5. Others: Framework-optimized inputs
  */
+
+// Framework Use Cases Data
+const FRAMEWORK_USE_CASES = {
+  swot: [
+    {
+      situation: "신규 사업 진입 결정",
+      output: "내부 역량(S/W)과 외부 환경(O/T)을 4분할로 정리하여 진입 전략 수립"
+    },
+    {
+      situation: "제품 리뉴얼 검토",
+      output: "현재 제품의 강점과 약점, 시장 기회와 위협을 시각화하여 개선 방향 도출"
+    },
+    {
+      situation: "경쟁사 분석",
+      output: "우리와 경쟁사의 차별화 포인트와 시장 포지셔닝을 비교 분석"
+    }
+  ],
+  porter_5_forces: [
+    {
+      situation: "새로운 시장 진입 검토",
+      output: "5가지 경쟁 요인을 분석하여 진입 장벽과 수익성 예측"
+    },
+    {
+      situation: "산업 구조 변화 대응",
+      output: "공급자/구매자 교섭력, 신규 진입자, 대체재 위협을 종합적으로 파악"
+    }
+  ],
+  bcg_matrix: [
+    {
+      situation: "사업 포트폴리오 최적화",
+      output: "Star/Question Mark/Cash Cow/Dog 분류로 투자 우선순위 결정"
+    },
+    {
+      situation: "자원 배분 전략 수립",
+      output: "성장률과 점유율 기준으로 사업별 투자 규모 조정"
+    }
+  ],
+  ice_score: [
+    {
+      situation: "프로덕트 백로그 우선순위 결정",
+      output: "Impact, Confidence, Ease 점수로 빠른 기능 선정"
+    },
+    {
+      situation: "스타트업 MVP 기능 선택",
+      output: "제한된 리소스로 가장 효과적인 기능 우선 개발"
+    }
+  ],
+  rice_score: [
+    {
+      situation: "제품 로드맵 작성",
+      output: "Reach, Impact, Confidence, Effort를 종합하여 분기별 개발 계획 수립"
+    }
+  ]
+};
+
 const GuidedDecisionFlow = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [frameworks, setFrameworks] = useState([]);
   const [selectedFramework, setSelectedFramework] = useState(null);
-  const [cards, setCards] = useState([]);
-  const [analysisResult, setAnalysisResult] = useState(null);
+  const [expandedFrameworks, setExpandedFrameworks] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // 프레임워크 상세 정보 토글 상태
-  const [expandedFrameworks, setExpandedFrameworks] = useState({});
+  // Framework-specific data structures
+  const [swotData, setSwotData] = useState({
+    strengths: [],
+    weaknesses: [],
+    opportunities: [],
+    threats: []
+  });
+
+  const [forcesData, setForcesData] = useState({
+    newEntrants: '',
+    suppliers: '',
+    buyers: '',
+    substitutes: '',
+    rivalry: ''
+  });
+
+  const [bcgData, setBcgData] = useState({
+    star: [],
+    questionMark: [],
+    cashCow: [],
+    dog: []
+  });
+
+  const [ideasData, setIdeasData] = useState([]);
+
+  const [analysisResult, setAnalysisResult] = useState(null);
 
   useEffect(() => {
     loadFrameworks();
@@ -37,7 +115,7 @@ const GuidedDecisionFlow = () => {
   };
 
   const toggleFrameworkDetails = (frameworkId, e) => {
-    e.stopPropagation(); // 카드 클릭 이벤트 방지
+    e.stopPropagation();
     setExpandedFrameworks(prev => ({
       ...prev,
       [frameworkId]: !prev[frameworkId]
@@ -50,6 +128,13 @@ const GuidedDecisionFlow = () => {
       const response = await fetch(`/api/v1/frameworks/${frameworkId}`);
       const data = await response.json();
       setSelectedFramework(data);
+      
+      // Reset data
+      setSwotData({ strengths: [], weaknesses: [], opportunities: [], threats: [] });
+      setForcesData({ newEntrants: '', suppliers: '', buyers: '', substitutes: '', rivalry: '' });
+      setBcgData({ star: [], questionMark: [], cashCow: [], dog: [] });
+      setIdeasData([]);
+      
       setCurrentStep(2);
     } catch (error) {
       console.error('Framework load error:', error);
@@ -57,19 +142,6 @@ const GuidedDecisionFlow = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleAddCard = (cardData) => {
-    const newCard = {
-      id: `card-${Date.now()}-${Math.random()}`,
-      ...cardData,
-      timestamp: new Date().toISOString()
-    };
-    setCards([...cards, newCard]);
-  };
-
-  const handleRemoveCard = (cardId) => {
-    setCards(cards.filter(c => c.id !== cardId));
   };
 
   const goToNextStep = () => {
@@ -83,37 +155,49 @@ const GuidedDecisionFlow = () => {
   const runAnalysis = async () => {
     setLoading(true);
     try {
-      const optimizeResponse = await fetch('/api/v1/cards/optimize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cards: cards,
-          max_cards: 7,
-          remove_duplicates: true,
-          remove_noise: true,
-          trim_to_limit: true,
-        }),
-      });
-      const optimized = await optimizeResponse.json();
-
-      if (optimized.optimized_cards) {
-        setCards(optimized.optimized_cards);
+      // Convert framework-specific data to cards format for API
+      let cards = [];
+      
+      if (selectedFramework.id === 'swot') {
+        swotData.strengths.forEach(item => cards.push({ dimension: 'Strengths', name: item, value: item }));
+        swotData.weaknesses.forEach(item => cards.push({ dimension: 'Weaknesses', name: item, value: item }));
+        swotData.opportunities.forEach(item => cards.push({ dimension: 'Opportunities', name: item, value: item }));
+        swotData.threats.forEach(item => cards.push({ dimension: 'Threats', name: item, value: item }));
+      } else if (selectedFramework.id === 'porter_5_forces') {
+        if (forcesData.newEntrants) cards.push({ dimension: 'New Entrants', name: 'New Entrants', value: forcesData.newEntrants });
+        if (forcesData.suppliers) cards.push({ dimension: 'Supplier Power', name: 'Supplier Power', value: forcesData.suppliers });
+        if (forcesData.buyers) cards.push({ dimension: 'Buyer Power', name: 'Buyer Power', value: forcesData.buyers });
+        if (forcesData.substitutes) cards.push({ dimension: 'Substitutes', name: 'Substitutes', value: forcesData.substitutes });
+        if (forcesData.rivalry) cards.push({ dimension: 'Competitive Rivalry', name: 'Competitive Rivalry', value: forcesData.rivalry });
+      } else if (selectedFramework.id === 'bcg_matrix') {
+        bcgData.star.forEach(item => cards.push({ dimension: 'Star', name: item, value: item }));
+        bcgData.questionMark.forEach(item => cards.push({ dimension: 'Question Mark', name: item, value: item }));
+        bcgData.cashCow.forEach(item => cards.push({ dimension: 'Cash Cow', name: item, value: item }));
+        bcgData.dog.forEach(item => cards.push({ dimension: 'Dog', name: item, value: item }));
+      } else if (selectedFramework.id === 'ice_score' || selectedFramework.id === 'rice_score') {
+        ideasData.forEach(idea => {
+          cards.push({
+            dimension: 'Idea',
+            name: idea.name,
+            value: JSON.stringify(idea.scores)
+          });
+        });
       }
 
       const analysisResponse = await fetch('/api/v1/decision/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          goal: `${selectedFramework?.name} 분석`,
+          goal: `${selectedFramework?.name} Analysis`,
           options: ["Option A", "Option B"],
-          current_cards: optimized.optimized_cards || cards,
+          current_cards: cards,
           category: selectedFramework?.category || 'strategy',
         }),
       });
       const analysis = await analysisResponse.json();
 
       setAnalysisResult(analysis);
-      setCurrentStep(5);
+      setCurrentStep(4); // Skip to results
     } catch (error) {
       console.error('Analysis error:', error);
       alert('분석 중 오류가 발생했습니다.');
@@ -122,23 +206,21 @@ const GuidedDecisionFlow = () => {
     }
   };
 
-  const progress = (currentStep / 5) * 100;
+  const progress = (currentStep / 4) * 100; // Now 4 steps instead of 5
 
   return (
     <div className="guided-flow">
-      {/* 헤더 */}
       <div className="flow-header">
         <h1>COGNITIVE DECK</h1>
-        <p>Data-Driven Decision Making System</p>
+        <p>Framework-Specific Decision Making System</p>
       </div>
 
-      {/* 진행 바 */}
       <div className="progress-section">
         <div className="progress-bar">
           <div className="progress-fill" style={{ width: `${progress}%` }} />
         </div>
         <div className="step-indicators">
-          {[1, 2, 3, 4, 5].map(step => (
+          {[1, 2, 3, 4].map(step => (
             <div
               key={step}
               className={`step-indicator ${currentStep >= step ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}
@@ -148,162 +230,199 @@ const GuidedDecisionFlow = () => {
                 {step === 1 && 'Select'}
                 {step === 2 && 'Guide'}
                 {step === 3 && 'Input'}
-                {step === 4 && 'Analyze'}
-                {step === 5 && 'Result'}
+                {step === 4 && 'Result'}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Step 1: 프레임워크 선택 (토글 기능 포함) */}
+      {/* Step 1: Framework Selection with Use Cases */}
       {currentStep === 1 && (
         <div className="step-content">
           <h2>Step 1: Framework Selection</h2>
-          <p className="step-desc">상황에 맞는 의사결정 프레임워크를 선택하세요</p>
+          <p className="step-desc">상황에 맞는 프레임워크를 선택하세요. 각 프레임워크의 활용 사례를 확인할 수 있습니다.</p>
 
           <div className="frameworks-list">
             {frameworks.map(fw => {
               const isExpanded = expandedFrameworks[fw.id];
+              const useCases = FRAMEWORK_USE_CASES[fw.id] || [];
 
               return (
-                <FrameworkCard
-                  key={fw.id}
-                  framework={fw}
-                  isExpanded={isExpanded}
-                  onToggle={(e) => toggleFrameworkDetails(fw.id, e)}
-                  onSelect={() => handleSelectFramework(fw.id)}
-                />
+                <div key={fw.id} className="framework-item">
+                  <h3>{fw.name}</h3>
+                  <p className="fw-desc">{fw.description}</p>
+                  <div className="fw-meta">
+                    <span className="fw-cat">{fw.category}</span>
+                    <span className="fw-dims">{fw.dimensions}개 차원</span>
+                  </div>
+
+                  {/* Use Cases */}
+                  {useCases.length > 0 && (
+                    <div className="use-cases">
+                      <h4>활용 사례</h4>
+                      {useCases.map((useCase, i) => (
+                        <div key={i} className="use-case-item">
+                          <div className="use-case-situation">{useCase.situation}</div>
+                          <div className="use-case-output">→ {useCase.output}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Toggle Details */}
+                  <div className="framework-toggle">
+                    <button className="toggle-button" onClick={(e) => toggleFrameworkDetails(fw.id, e)}>
+                      <span>상세 정보</span>
+                      <span className={`toggle-icon ${isExpanded ? 'open' : ''}`}>▼</span>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="framework-details">
+                        <div className="detail-section">
+                          <h4>How to Use</h4>
+                          <div className="how-to-use">
+                            <p>
+                              {fw.id === 'swot' && '내부(강점/약점)와 외부(기회/위협) 요인을 4분할로 정리하여 전략을 수립합니다.'}
+                              {fw.id === 'porter_5_forces' && '5가지 경쟁 요인을 분석하여 산업 구조와 수익성을 파악합니다.'}
+                              {fw.id === 'bcg_matrix' && '사업 포트폴리오를 시장 성장률과 점유율로 분류하여 자원 배분 전략을 수립합니다.'}
+                              {fw.id === 'ice_score' && 'Impact, Confidence, Ease 3가지 기준으로 아이디어의 우선순위를 결정합니다.'}
+                              {fw.id === 'rice_score' && 'Reach, Impact, Confidence, Effort 4가지 기준으로 제품 기능의 우선순위를 결정합니다.'}
+                              {!['swot', 'porter_5_forces', 'bcg_matrix', 'ice_score', 'rice_score'].includes(fw.id) &&
+                                '이 프레임워크를 사용하여 체계적인 의사결정을 수행합니다.'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <button className="select-btn" onClick={() => handleSelectFramework(fw.id)}>
+                    Select Framework →
+                  </button>
+                </div>
               );
             })}
           </div>
         </div>
       )}
-
-      {/* Step 2: 프레임워크별 특화 UI */}
+      {/* Step 2: Interactive Framework Guide */}
       {currentStep === 2 && selectedFramework && (
         <div className="step-content">
-          <h2>Step 2: {selectedFramework.name}</h2>
-          <p className="step-desc">프레임워크 정보 및 필요한 카드를 확인하세요</p>
+          <h2>Step 2: {selectedFramework.name} Guide</h2>
+          <p className="step-desc">프레임워크 사용 방법과 필요한 정보를 확인하세요</p>
 
-          {/* 프레임워크별 특화 레이아웃 렌더링 */}
-          <FrameworkSpecializedLayout framework={selectedFramework} />
-
-          {/* 카드 요구사항 */}
-          <div className="card-requirements">
-            <h4>📋 필요한 최소 카드: {selectedFramework.required_cards}개</h4>
-            <div className="template-grid">
-              {selectedFramework.card_template?.map((template, i) => (
-                <div key={i} className="template-card">
-                  <h5>{template.dimension}</h5>
-                  <p className="template-desc">{template.description}</p>
-                  {template.examples && (
-                    <div className="template-examples">
-                      <strong>예시</strong>
-                      <ul>
-                        {template.examples.map((ex, j) => (
-                          <li key={j}>{ex}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ))}
+          <div className="framework-guide">
+            {/* Detailed Guide Sections */}
+            <div className="guide-section">
+              <h3>📊 분석 개요</h3>
+              <p>{selectedFramework.description}</p>
             </div>
+
+            {selectedFramework.pros && selectedFramework.pros.length > 0 && (
+              <div className="guide-section">
+                <h3>✓ 장점</h3>
+                <ul className="guide-list">
+                  {selectedFramework.pros.map((pro, i) => (
+                    <li key={i}>{pro}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {selectedFramework.when_to_use && selectedFramework.when_to_use.length > 0 && (
+              <div className="guide-section">
+                <h3>→ 적합한 상황</h3>
+                <ul className="guide-list">
+                  {selectedFramework.when_to_use.map((when, i) => (
+                    <li key={i}>{when}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {selectedFramework.card_template && selectedFramework.card_template.length > 0 && (
+              <div className="guide-section">
+                <h3>📝 입력 가이드</h3>
+                <p>다음 단계에서 아래 정보를 입력하게 됩니다:</p>
+                <ul className="guide-list">
+                  {selectedFramework.card_template.map((template, i) => (
+                    <li key={i}>
+                      <strong>{template.dimension}:</strong> {template.description}
+                      {template.examples && template.examples.length > 0 && (
+                        <span> (예: {template.examples.slice(0, 2).join(', ')})</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div className="step-nav">
             <button onClick={goToPrevStep} className="btn-prev">← Previous</button>
-            <button onClick={goToNextStep} className="btn-next">Next: Card Input →</button>
+            <button onClick={goToNextStep} className="btn-next">Next: Input Data →</button>
           </div>
         </div>
       )}
 
-      {/* Step 3: 카드 작성 */}
+      {/* Step 3: Framework-Specific Input */}
       {currentStep === 3 && selectedFramework && (
         <div className="step-content">
-          <h2>Step 3: Card Creation</h2>
+          <h2>Step 3: Data Input</h2>
           <p className="step-desc">
-            프레임워크에 필요한 정보를 카드로 작성하세요
-            (최소 {selectedFramework.required_cards}개 필요, 현재 {cards.length}개)
+            {selectedFramework.name}에 필요한 정보를 입력하세요
           </p>
 
-          <CardInputForm
-            framework={selectedFramework}
-            onAddCard={handleAddCard}
-          />
+          {/* SWOT Analysis Input */}
+          {selectedFramework.id === 'swot' && (
+            <SWOTInput data={swotData} setData={setSwotData} />
+          )}
 
-          <div className="cards-list">
-            <h4>작성된 카드 ({cards.length}개)</h4>
-            {cards.length === 0 && (
-              <p className="empty-message">아직 작성된 카드가 없습니다</p>
-            )}
-            <div className="cards-grid">
-              {cards.map(card => (
-                <div key={card.id} className="card-item">
-                  <div className="card-header">
-                    <span className="card-name">{card.name}</span>
-                    <button onClick={() => handleRemoveCard(card.id)} className="card-remove">✕</button>
-                  </div>
-                  <div className="card-body">
-                    {card.dimension && <span className="card-dim">{card.dimension}</span>}
-                    <span className="card-value">{card.value}</span>
-                  </div>
-                </div>
-              ))}
+          {/* Porter's 5 Forces Input */}
+          {selectedFramework.id === 'porter_5_forces' && (
+            <PorterForcesInput data={forcesData} setData={setForcesData} />
+          )}
+
+          {/* BCG Matrix Input */}
+          {selectedFramework.id === 'bcg_matrix' && (
+            <BCGMatrixInput data={bcgData} setData={setBcgData} />
+          )}
+
+          {/* ICE/RICE Score Input */}
+          {(selectedFramework.id === 'ice_score' || selectedFramework.id === 'rice_score') && (
+            <ScoreInput 
+              frameworkId={selectedFramework.id}
+              data={ideasData} 
+              setData={setIdeasData} 
+            />
+          )}
+
+          {/* Default Input for Other Frameworks */}
+          {!['swot', 'porter_5_forces', 'bcg_matrix', 'ice_score', 'rice_score'].includes(selectedFramework.id) && (
+            <div className="guide-section">
+              <h3>데이터 입력 준비 중...</h3>
+              <p>이 프레임워크를 위한 특화 입력 UI는 곧 추가될 예정입니다.</p>
             </div>
-          </div>
+          )}
 
           <div className="step-nav">
             <button onClick={goToPrevStep} className="btn-prev">← Previous</button>
-            <button
-              onClick={goToNextStep}
-              className="btn-next"
-              disabled={cards.length < selectedFramework.required_cards}
-            >
-              {cards.length < selectedFramework.required_cards
-                ? `최소 ${selectedFramework.required_cards}개 필요 (${cards.length}/${selectedFramework.required_cards})`
-                : 'Next: Analyze →'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 4: 분석 실행 */}
-      {currentStep === 4 && (
-        <div className="step-content">
-          <h2>Step 4: Analysis</h2>
-          <p className="step-desc">작성한 {cards.length}개의 카드를 분석합니다</p>
-
-          <div className="analysis-ready">
-            <div className="ready-info">
-              <h4>✓ Ready to Analyze</h4>
-              <ul>
-                <li>프레임워크: {selectedFramework?.name}</li>
-                <li>카드 수: {cards.length}개</li>
-                <li>분석 방법: {selectedFramework?.analysis_method}</li>
-              </ul>
-            </div>
-
             <button
               onClick={runAnalysis}
               disabled={loading}
-              className="btn-analyze"
+              className="btn-next"
             >
-              {loading ? 'Analyzing...' : 'Start Analysis'}
+              {loading ? 'Analyzing...' : 'Analyze →'}
             </button>
-          </div>
-
-          <div className="step-nav">
-            <button onClick={goToPrevStep} className="btn-prev">← Previous</button>
           </div>
         </div>
       )}
 
-      {/* Step 5: 결과 및 추천 */}
-      {currentStep === 5 && analysisResult && (
+      {/* Step 4: Results */}
+      {currentStep === 4 && analysisResult && (
         <div className="step-content">
-          <h2>Step 5: Analysis Result</h2>
+          <h2>Step 4: Analysis Result</h2>
           <p className="step-desc">프레임워크 기반 분석이 완료되었습니다</p>
 
           <div className="result-sections">
@@ -346,7 +465,7 @@ const GuidedDecisionFlow = () => {
           </div>
 
           <div className="step-nav">
-            <button onClick={() => setCurrentStep(1)} className="btn-restart">
+            <button onClick={() => { setCurrentStep(1); setAnalysisResult(null); }} className="btn-restart">
               New Analysis
             </button>
           </div>
@@ -355,336 +474,291 @@ const GuidedDecisionFlow = () => {
     </div>
   );
 };
-
 /**
- * 프레임워크 카드 컴포넌트 (토글 기능 포함)
+ * SWOT Analysis 4-Quadrant Input Component
  */
-const FrameworkCard = ({ framework, isExpanded, onToggle, onSelect }) => {
-  return (
-    <div className="framework-item">
-      <h3>{framework.name}</h3>
-      <p className="fw-desc">{framework.description}</p>
-      <div className="fw-meta">
-        <span className="fw-cat">{framework.category}</span>
-        <span className="fw-dims">{framework.dimensions}개 차원</span>
-      </div>
-
-      {/* 토글 버튼 */}
-      <div className="framework-toggle">
-        <button className="toggle-button" onClick={onToggle}>
-          <span>상세 정보</span>
-          <span className={`toggle-icon ${isExpanded ? 'open' : ''}`}>▼</span>
-        </button>
-
-        {/* 상세 정보 (토글 시 표시) */}
-        {isExpanded && (
-          <div className="framework-details">
-            <div className="detail-section">
-              <h4>How to Use</h4>
-              <div className="how-to-use">
-                <p>
-                  {framework.id === 'swot' && '내부(강점/약점)와 외부(기회/위협) 요인을 4분할로 정리하여 전략을 수립합니다.'}
-                  {framework.id === 'porter_5_forces' && '5가지 경쟁 요인을 분석하여 산업 구조와 수익성을 파악합니다.'}
-                  {framework.id === 'bcg_matrix' && '사업 포트폴리오를 시장 성장률과 점유율로 분류하여 자원 배분 전략을 수립합니다.'}
-                  {framework.id === 'ice_score' && 'Impact, Confidence, Ease 3가지 기준으로 아이디어의 우선순위를 결정합니다.'}
-                  {framework.id === 'rice_score' && 'Reach, Impact, Confidence, Effort 4가지 기준으로 제품 기능의 우선순위를 결정합니다.'}
-                  {framework.id === 'mckinsey_7s' && '7가지 핵심 요소(전략, 구조, 시스템, 공유가치, 기술, 스타일, 인력)의 정렬 상태를 분석합니다.'}
-                  {framework.id === 'raci' && '프로젝트 역할을 Responsible, Accountable, Consulted, Informed로 명확히 정의합니다.'}
-                  {!['swot', 'porter_5_forces', 'bcg_matrix', 'ice_score', 'rice_score', 'mckinsey_7s', 'raci'].includes(framework.id) &&
-                    '이 프레임워크를 사용하여 체계적인 의사결정을 수행합니다.'}
-                </p>
-              </div>
-            </div>
-
-            <div className="detail-section">
-              <h4>When to Use</h4>
-              <ul>
-                {framework.id === 'swot' && (
-                  <>
-                    <li>새로운 사업 시작 전 전략 수립</li>
-                    <li>현재 상황 파악 및 팀 워크샵</li>
-                  </>
-                )}
-                {framework.id === 'porter_5_forces' && (
-                  <>
-                    <li>신규 시장 진입 검토</li>
-                    <li>산업 구조 분석 필요 시</li>
-                  </>
-                )}
-                {framework.id === 'bcg_matrix' && (
-                  <>
-                    <li>다수의 사업/제품 포트폴리오 관리</li>
-                    <li>자원 배분 전략 수립</li>
-                  </>
-                )}
-                {framework.id === 'ice_score' && (
-                  <>
-                    <li>빠른 아이디어 우선순위 결정</li>
-                    <li>스타트업 초기 기능 선정</li>
-                  </>
-                )}
-                {framework.id === 'rice_score' && (
-                  <>
-                    <li>제품 로드맵 작성</li>
-                    <li>기능 우선순위 결정</li>
-                  </>
-                )}
-              </ul>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <button className="select-btn" onClick={onSelect}>
-        Select Framework →
-      </button>
-    </div>
-  );
-};
-
-/**
- * 프레임워크별 특화 레이아웃
- */
-const FrameworkSpecializedLayout = ({ framework }) => {
-  // SWOT Analysis - 2x2 Quadrant
-  if (framework.id === 'swot') {
-    return (
-      <div className="swot-layout">
-        <div className="swot-quadrant strengths">
-          <h3>Strengths</h3>
-          <p>내부의 경쟁 우위 요소</p>
-          <ul>
-            {framework.pros?.slice(0, 3).map((pro, i) => (
-              <li key={i}>{pro}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="swot-quadrant weaknesses">
-          <h3>Weaknesses</h3>
-          <p>내부의 개선이 필요한 요소</p>
-          <ul>
-            {framework.cons?.slice(0, 3).map((con, i) => (
-              <li key={i}>{con}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="swot-quadrant opportunities">
-          <h3>Opportunities</h3>
-          <p>외부의 활용 가능한 기회</p>
-          <ul>
-            {framework.when_to_use?.slice(0, 3).map((when, i) => (
-              <li key={i}>{when}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="swot-quadrant threats">
-          <h3>Threats</h3>
-          <p>외부의 위협 요인</p>
-          <ul>
-            {framework.when_not_to_use?.slice(0, 3).map((when, i) => (
-              <li key={i}>{when}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    );
-  }
-
-  // Porter's 5 Forces - 5-Direction Layout
-  if (framework.id === 'porter_5_forces') {
-    return (
-      <div className="forces-layout">
-        <div className="force-box top">
-          <h4>신규 진입자의 위협</h4>
-          <p>New Entrants</p>
-        </div>
-        <div className="force-box left">
-          <h4>공급자의 교섭력</h4>
-          <p>Supplier Power</p>
-        </div>
-        <div className="force-box center">
-          <h3>산업 내 경쟁</h3>
-          <p>Competitive Rivalry</p>
-        </div>
-        <div className="force-box right">
-          <h4>구매자의 교섭력</h4>
-          <p>Buyer Power</p>
-        </div>
-        <div className="force-box bottom">
-          <h4>대체재의 위협</h4>
-          <p>Substitutes</p>
-        </div>
-      </div>
-    );
-  }
-
-  // BCG Matrix - 2x2 Growth-Share Matrix
-  if (framework.id === 'bcg_matrix') {
-    return (
-      <div className="bcg-layout">
-        <div className="bcg-quadrant">
-          <h3>★ Star</h3>
-          <p className="quadrant-desc">높은 성장률, 높은 점유율</p>
-          <p>투자 확대 필요</p>
-        </div>
-        <div className="bcg-quadrant">
-          <h3>? Question Mark</h3>
-          <p className="quadrant-desc">높은 성장률, 낮은 점유율</p>
-          <p>선택적 투자 검토</p>
-        </div>
-        <div className="bcg-quadrant">
-          <h3>$ Cash Cow</h3>
-          <p className="quadrant-desc">낮은 성장률, 높은 점유율</p>
-          <p>수익 창출원</p>
-        </div>
-        <div className="bcg-quadrant">
-          <h3>✕ Dog</h3>
-          <p className="quadrant-desc">낮은 성장률, 낮은 점유율</p>
-          <p>철수 검토</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ICE/RICE Score - Slider Layout
-  if (framework.id === 'ice_score' || framework.id === 'rice_score') {
-    const criteria = framework.id === 'ice_score'
-      ? ['Impact', 'Confidence', 'Ease']
-      : ['Reach', 'Impact', 'Confidence', 'Effort'];
-
-    return (
-      <div className="score-layout">
-        <h3>{framework.name} 평가 기준</h3>
-        {criteria.map((criterion, i) => (
-          <div key={i} className="score-slider">
-            <label>{criterion}</label>
-            <input type="range" min="1" max="10" defaultValue="5" disabled />
-            <span className="score-value">5</span>
-          </div>
-        ))}
-        <p style={{ marginTop: '20px', color: 'var(--gray-600)' }}>
-          실제 평가는 Step 3: 카드 작성 단계에서 진행됩니다
-        </p>
-      </div>
-    );
-  }
-
-  // Default: Generic Info Grid
-  return (
-    <div className="framework-info-grid">
-      {framework.pros && framework.pros.length > 0 && (
-        <div className="info-box">
-          <h4>✓ Pros</h4>
-          <ul>
-            {framework.pros.map((pro, i) => (
-              <li key={i}>{pro}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {framework.cons && framework.cons.length > 0 && (
-        <div className="info-box">
-          <h4>✕ Cons</h4>
-          <ul>
-            {framework.cons.map((con, i) => (
-              <li key={i}>{con}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {framework.when_to_use && framework.when_to_use.length > 0 && (
-        <div className="info-box">
-          <h4>→ When to Use</h4>
-          <ul>
-            {framework.when_to_use.map((when, i) => (
-              <li key={i}>{when}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {framework.when_not_to_use && framework.when_not_to_use.length > 0 && (
-        <div className="info-box">
-          <h4>! When NOT to Use</h4>
-          <ul>
-            {framework.when_not_to_use.map((when, i) => (
-              <li key={i}>{when}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-};
-
-/**
- * 카드 입력 폼
- */
-const CardInputForm = ({ framework, onAddCard }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    value: '',
-    dimension: framework?.card_template?.[0]?.dimension || '',
+const SWOTInput = ({ data, setData }) => {
+  const [inputs, setInputs] = useState({
+    strengths: '',
+    weaknesses: '',
+    opportunities: '',
+    threats: ''
   });
 
-  const handleSubmit = (e) => {
+  const addItem = (quadrant) => {
+    if (!inputs[quadrant].trim()) return;
+    
+    setData(prev => ({
+      ...prev,
+      [quadrant]: [...prev[quadrant], inputs[quadrant].trim()]
+    }));
+    
+    setInputs(prev => ({ ...prev, [quadrant]: '' }));
+  };
+
+  const removeItem = (quadrant, index) => {
+    setData(prev => ({
+      ...prev,
+      [quadrant]: prev[quadrant].filter((_, i) => i !== index)
+    }));
+  };
+
+  const quadrants = [
+    { key: 'strengths', title: 'Strengths', subtitle: '내부의 경쟁 우위 요소', className: 'strengths' },
+    { key: 'weaknesses', title: 'Weaknesses', subtitle: '내부의 개선이 필요한 요소', className: 'weaknesses' },
+    { key: 'opportunities', title: 'Opportunities', subtitle: '외부의 활용 가능한 기회', className: 'opportunities' },
+    { key: 'threats', title: 'Threats', subtitle: '외부의 위협 요인', className: 'threats' }
+  ];
+
+  return (
+    <div className="swot-input-grid">
+      {quadrants.map(quadrant => (
+        <div key={quadrant.key} className={`swot-quadrant-input ${quadrant.className}`}>
+          <h3>{quadrant.title}</h3>
+          <span className="quadrant-subtitle">{quadrant.subtitle}</span>
+          
+          <ul className="swot-item-list">
+            {data[quadrant.key].map((item, index) => (
+              <li key={index} className="swot-item">
+                <span className="swot-item-text">{item}</span>
+                <button 
+                  onClick={() => removeItem(quadrant.key, index)} 
+                  className="swot-item-remove"
+                  type="button"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          <form className="swot-input-form" onSubmit={(e) => { e.preventDefault(); addItem(quadrant.key); }}>
+            <input
+              type="text"
+              value={inputs[quadrant.key]}
+              onChange={(e) => setInputs(prev => ({ ...prev, [quadrant.key]: e.target.value }))}
+              placeholder={`${quadrant.title} 항목 입력...`}
+            />
+            <button type="submit">Add</button>
+          </form>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/**
+ * Porter's 5 Forces Input Component
+ */
+const PorterForcesInput = ({ data, setData }) => {
+  const forces = [
+    { key: 'newEntrants', title: '신규 진입자의 위협', subtitle: 'New Entrants', position: 'top' },
+    { key: 'suppliers', title: '공급자의 교섭력', subtitle: 'Supplier Power', position: 'left' },
+    { key: 'rivalry', title: '산업 내 경쟁', subtitle: 'Competitive Rivalry', position: 'center' },
+    { key: 'buyers', title: '구매자의 교섭력', subtitle: 'Buyer Power', position: 'right' },
+    { key: 'substitutes', title: '대체재의 위협', subtitle: 'Substitutes', position: 'bottom' }
+  ];
+
+  return (
+    <div className="forces-input-layout">
+      {forces.map(force => (
+        <div key={force.key} className={`force-input-box ${force.position}`}>
+          <h4>{force.title}</h4>
+          <p>{force.subtitle}</p>
+          <textarea
+            className="force-textarea"
+            value={data[force.key]}
+            onChange={(e) => setData(prev => ({ ...prev, [force.key]: e.target.value }))}
+            placeholder={`${force.title}에 대한 분석을 입력하세요...`}
+          />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/**
+ * BCG Matrix Input Component
+ */
+const BCGMatrixInput = ({ data, setData }) => {
+  const [inputs, setInputs] = useState({
+    star: '',
+    questionMark: '',
+    cashCow: '',
+    dog: ''
+  });
+
+  const addBusiness = (quadrant) => {
+    if (!inputs[quadrant].trim()) return;
+    
+    setData(prev => ({
+      ...prev,
+      [quadrant]: [...prev[quadrant], inputs[quadrant].trim()]
+    }));
+    
+    setInputs(prev => ({ ...prev, [quadrant]: '' }));
+  };
+
+  const removeBusiness = (quadrant, index) => {
+    setData(prev => ({
+      ...prev,
+      [quadrant]: prev[quadrant].filter((_, i) => i !== index)
+    }));
+  };
+
+  const quadrants = [
+    { key: 'star', title: '★ Star', desc: '높은 성장률, 높은 점유율 - 투자 확대' },
+    { key: 'questionMark', title: '? Question Mark', desc: '높은 성장률, 낮은 점유율 - 선택적 투자' },
+    { key: 'cashCow', title: '$ Cash Cow', desc: '낮은 성장률, 높은 점유율 - 수익 창출' },
+    { key: 'dog', title: '✕ Dog', desc: '낮은 성장률, 낮은 점유율 - 철수 검토' }
+  ];
+
+  return (
+    <div className="bcg-input-layout">
+      {quadrants.map(quadrant => (
+        <div key={quadrant.key} className="bcg-quadrant-input">
+          <h3>{quadrant.title}</h3>
+          <p className="quadrant-desc">{quadrant.desc}</p>
+          
+          <ul className="bcg-business-list">
+            {data[quadrant.key].map((business, index) => (
+              <li key={index} className="bcg-business-item">
+                <span>{business}</span>
+                <button
+                  onClick={() => removeBusiness(quadrant.key, index)}
+                  className="swot-item-remove"
+                  type="button"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          <form className="bcg-add-business" onSubmit={(e) => { e.preventDefault(); addBusiness(quadrant.key); }}>
+            <input
+              type="text"
+              value={inputs[quadrant.key]}
+              onChange={(e) => setInputs(prev => ({ ...prev, [quadrant.key]: e.target.value }))}
+              placeholder="사업 단위명 입력..."
+            />
+            <button type="submit">Add</button>
+          </form>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/**
+ * ICE/RICE Score Input Component
+ */
+const ScoreInput = ({ frameworkId, data, setData }) => {
+  const [newIdeaName, setNewIdeaName] = useState('');
+  
+  const criteria = frameworkId === 'ice_score'
+    ? ['impact', 'confidence', 'ease']
+    : ['reach', 'impact', 'confidence', 'effort'];
+
+  const addIdea = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.value) {
-      alert('카드 이름과 값을 입력하세요');
-      return;
-    }
+    if (!newIdeaName.trim()) return;
 
-    onAddCard(formData);
+    const newIdea = {
+      id: Date.now(),
+      name: newIdeaName.trim(),
+      scores: {}
+    };
 
-    setFormData({
-      name: '',
-      value: '',
-      dimension: framework?.card_template?.[0]?.dimension || '',
+    criteria.forEach(criterion => {
+      newIdea.scores[criterion] = 5;
     });
+
+    setData([...data, newIdea]);
+    setNewIdeaName('');
+  };
+
+  const removeIdea = (ideaId) => {
+    setData(data.filter(idea => idea.id !== ideaId));
+  };
+
+  const updateScore = (ideaId, criterion, value) => {
+    setData(data.map(idea => {
+      if (idea.id === ideaId) {
+        return {
+          ...idea,
+          scores: {
+            ...idea.scores,
+            [criterion]: parseInt(value)
+          }
+        };
+      }
+      return idea;
+    }));
+  };
+
+  const calculateScore = (scores) => {
+    if (frameworkId === 'ice_score') {
+      return ((scores.impact || 0) * (scores.confidence || 0) * (scores.ease || 0)) / 10;
+    } else {
+      // RICE: (Reach * Impact * Confidence) / Effort
+      return ((scores.reach || 0) * (scores.impact || 0) * (scores.confidence || 0)) / (scores.effort || 1);
+    }
+  };
+
+  const criteriaLabels = {
+    impact: 'Impact',
+    confidence: 'Confidence',
+    ease: 'Ease',
+    reach: 'Reach',
+    effort: 'Effort'
   };
 
   return (
-    <form onSubmit={handleSubmit} className="card-input-form">
-      <div className="form-row">
-        <div className="form-group">
-          <label>Dimension</label>
-          <select
-            value={formData.dimension}
-            onChange={(e) => setFormData({...formData, dimension: e.target.value})}
-          >
-            {framework?.card_template?.map(template => (
-              <option key={template.dimension} value={template.dimension}>
-                {template.dimension}
-              </option>
-            ))}
-          </select>
-        </div>
+    <div className="score-input-layout">
+      <h3>{frameworkId === 'ice_score' ? 'ICE Score' : 'RICE Score'} 평가</h3>
 
-        <div className="form-group">
-          <label>Card Name</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
-            placeholder="예: 강력한 브랜드"
-          />
-        </div>
+      <div className="ideas-list">
+        {data.map(idea => (
+          <div key={idea.id} className="idea-item">
+            <div className="idea-header">
+              <span className="idea-name">{idea.name}</span>
+              <button onClick={() => removeIdea(idea.id)} className="idea-remove">✕</button>
+            </div>
 
-        <div className="form-group">
-          <label>Value / Description</label>
-          <input
-            type="text"
-            value={formData.value}
-            onChange={(e) => setFormData({...formData, value: e.target.value})}
-            placeholder="예: 시장 점유율 1위"
-          />
-        </div>
+            <div className="idea-sliders">
+              {criteria.map(criterion => (
+                <div key={criterion} className="slider-group">
+                  <label>{criteriaLabels[criterion]}</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={idea.scores[criterion] || 5}
+                    onChange={(e) => updateScore(idea.id, criterion, e.target.value)}
+                  />
+                  <span className="slider-value">{idea.scores[criterion] || 5}</span>
+                </div>
+              ))}
+            </div>
 
-        <button type="submit" className="btn-add-card">Add Card</button>
+            <div className="idea-score">
+              Score: {calculateScore(idea.scores).toFixed(2)}
+            </div>
+          </div>
+        ))}
       </div>
-    </form>
+
+      <form className="add-idea-form" onSubmit={addIdea}>
+        <input
+          type="text"
+          value={newIdeaName}
+          onChange={(e) => setNewIdeaName(e.target.value)}
+          placeholder="아이디어 또는 기능명 입력..."
+        />
+        <button type="submit">Add Idea</button>
+      </form>
+    </div>
   );
 };
 
