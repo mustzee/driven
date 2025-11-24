@@ -1202,3 +1202,281 @@
     flex-wrap: wrap;
   }
 }
+
+/* ========================================
+   RESULTS SECTION STYLES
+   ======================================== */
+
+/* Position Zone (SWOT) */
+.swot-position {
+  background: var(--gray-100);
+  border-left: 4px solid var(--black);
+}
+
+.position-zone {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 16px 0;
+  color: var(--black);
+}
+
+.priority-label {
+  font-size: 14px;
+  color: var(--gray-700);
+  margin-top: 12px;
+}
+
+/* Score Grid */
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.score-item {
+  padding: 20px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: var(--transition-fast);
+}
+
+.score-item.positive {
+  background: var(--gray-100);
+  border: 2px solid var(--gray-300);
+}
+
+.score-item.negative {
+  background: var(--gray-200);
+  border: 2px dashed var(--gray-400);
+}
+
+.score-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.score-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-600);
+  margin-bottom: 8px;
+}
+
+.score-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--black);
+}
+
+/* Strategy Items */
+.strategy-item {
+  padding: 12px 16px;
+  margin: 8px 0;
+  border-left: 3px solid var(--gray-400);
+  background: var(--gray-100);
+  transition: var(--transition-fast);
+}
+
+.strategy-item.priority-high {
+  border-left-color: var(--black);
+  background: var(--white);
+}
+
+.strategy-item.priority-medium {
+  border-left-color: var(--gray-600);
+}
+
+.strategy-item.priority-low {
+  border-left-color: var(--gray-400);
+  opacity: 0.8;
+}
+
+.strategy-item:hover {
+  background: var(--white);
+  border-left-width: 5px;
+}
+
+/* Action List */
+.action-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+
+.action-list li {
+  padding: 12px 16px;
+  margin: 8px 0;
+  background: var(--gray-100);
+  border-left: 3px solid var(--black);
+  transition: var(--transition-fast);
+}
+
+.action-list li:hover {
+  background: var(--white);
+  border-left-width: 5px;
+}
+
+/* Score Bar (Generic) */
+.score-bar, .health-score .score-bar {
+  width: 100%;
+  height: 32px;
+  background: var(--gray-200);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+.score-fill {
+  height: 100%;
+  background: var(--black);
+  transition: width 0.6s ease-out;
+}
+
+.score-text {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 8px 0;
+  color: var(--black);
+}
+
+/* Industry Score (Porter's) */
+.industry-score {
+  margin: 20px 0;
+}
+
+.industry-score p {
+  margin-top: 12px;
+  font-size: 16px;
+}
+
+/* Force Score Items */
+.force-score-item {
+  margin: 16px 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.force-score-item:last-child {
+  border-bottom: none;
+}
+
+.force-label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--black);
+}
+
+.force-score-bar {
+  width: 100%;
+  height: 24px;
+  background: var(--gray-200);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.force-score-fill {
+  height: 100%;
+  transition: width 0.6s ease-out;
+}
+
+.force-score-fill.낮음 {
+  background: var(--gray-500);
+}
+
+.force-score-fill.보통 {
+  background: var(--gray-700);
+}
+
+.force-score-fill.높음 {
+  background: var(--black);
+}
+
+.force-score-text {
+  font-size: 14px;
+  color: var(--gray-700);
+}
+
+/* BCG Distribution */
+.bcg-distribution {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.bcg-quadrant {
+  padding: 24px;
+  background: var(--gray-100);
+  border: 2px solid var(--gray-300);
+  border-radius: 4px;
+  text-align: center;
+  transition: var(--transition-fast);
+}
+
+.bcg-quadrant:hover {
+  background: var(--white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bcg-quadrant.star {
+  border-color: var(--black);
+}
+
+.quadrant-name {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  color: var(--gray-700);
+}
+
+.quadrant-percentage {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--black);
+  margin: 8px 0;
+}
+
+.quadrant-count {
+  font-size: 14px;
+  color: var(--gray-600);
+}
+
+/* Issues List */
+.issues-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+
+.issues-list li {
+  padding: 10px 14px;
+  margin: 6px 0;
+  background: var(--gray-100);
+  border-left: 2px solid var(--gray-400);
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .score-grid,
+  .bcg-distribution {
+    grid-template-columns: 1fr;
+  }
+
+  .score-value {
+    font-size: 28px;
+  }
+
+  .quadrant-percentage {
+    font-size: 24px;
+  }
+}

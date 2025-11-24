@@ -552,8 +552,24 @@ class DecisionFramework:
 
 def analyze_decision(goal: str, options: List[str],
                     current_cards: List[Dict] = None,
-                    category: str = None) -> Dict[str, Any]:
+                    category: str = None,
+                    framework_id: str = None,
+                    framework_data: Dict[str, Any] = None) -> Dict[str, Any]:
     """Decision Framework 실행 (메인 함수)"""
+
+    # 프레임워크별 분석 엔진 사용
+    if framework_id and framework_data:
+        from framework_analyzers import analyze_framework
+        result = analyze_framework(framework_id, framework_data)
+
+        # 기본 정보 추가
+        result['goal'] = goal
+        result['options'] = options
+        result['category'] = category
+
+        return result
+
+    # 기존 방식 (Gap Analysis)
     framework = DecisionFramework(goal, options, current_cards, category)
     return framework.generate_full_analysis()
 

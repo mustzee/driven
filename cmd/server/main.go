@@ -336,10 +336,12 @@ print(json.dumps(result, ensure_ascii=False))
 // analyzeDecision 의사결정 프레임워크 분석
 func analyzeDecision(c *gin.Context) {
 	var req struct {
-		Goal         string                   `json:"goal" binding:"required"`
-		Options      []string                 `json:"options" binding:"required"`
-		CurrentCards []map[string]interface{} `json:"current_cards"`
-		Category     string                   `json:"category"`
+		Goal          string                   `json:"goal" binding:"required"`
+		Options       []string                 `json:"options" binding:"required"`
+		CurrentCards  []map[string]interface{} `json:"current_cards"`
+		Category      string                   `json:"category"`
+		FrameworkID   string                   `json:"framework_id"`
+		FrameworkData map[string]interface{}   `json:"framework_data"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -348,7 +350,7 @@ func analyzeDecision(c *gin.Context) {
 	}
 
 	// Python 스크립트 호출
-	result, err := runPythonDecisionAnalysis(req.Goal, req.Options, req.CurrentCards, req.Category)
+	result, err := runPythonDecisionAnalysis(req.Goal, req.Options, req.CurrentCards, req.Category, req.FrameworkID, req.FrameworkData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -358,13 +360,15 @@ func analyzeDecision(c *gin.Context) {
 }
 
 // runPythonDecisionAnalysis Python 의사결정 분석 실행
-func runPythonDecisionAnalysis(goal string, options []string, currentCards []map[string]interface{}, category string) (map[string]interface{}, error) {
+func runPythonDecisionAnalysis(goal string, options []string, currentCards []map[string]interface{}, category string, frameworkID string, frameworkData map[string]interface{}) (map[string]interface{}, error) {
 	// 입력 데이터를 JSON으로 직렬화
 	inputData := map[string]interface{}{
-		"goal":          goal,
-		"options":       options,
-		"current_cards": currentCards,
-		"category":      category,
+		"goal":           goal,
+		"options":        options,
+		"current_cards":  currentCards,
+		"category":       category,
+		"framework_id":   frameworkID,
+		"framework_data": frameworkData,
 	}
 
 	inputJSON, err := json.Marshal(inputData)
@@ -388,7 +392,9 @@ result = analyze_decision(
     goal=input_data["goal"],
     options=input_data["options"],
     current_cards=input_data.get("current_cards"),
-    category=input_data.get("category")
+    category=input_data.get("category"),
+    framework_id=input_data.get("framework_id"),
+    framework_data=input_data.get("framework_data")
 )
 
 print(json.dumps(result, ensure_ascii=False))

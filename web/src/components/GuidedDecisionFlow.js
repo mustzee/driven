@@ -155,33 +155,37 @@ const GuidedDecisionFlow = () => {
   const runAnalysis = async () => {
     setLoading(true);
     try {
-      // Convert framework-specific data to cards format for API
-      let cards = [];
-      
+      // Prepare framework-specific data
+      let frameworkData = {};
+
       if (selectedFramework.id === 'swot') {
-        swotData.strengths.forEach(item => cards.push({ dimension: 'Strengths', name: item, value: item }));
-        swotData.weaknesses.forEach(item => cards.push({ dimension: 'Weaknesses', name: item, value: item }));
-        swotData.opportunities.forEach(item => cards.push({ dimension: 'Opportunities', name: item, value: item }));
-        swotData.threats.forEach(item => cards.push({ dimension: 'Threats', name: item, value: item }));
+        frameworkData = {
+          strengths: swotData.strengths,
+          weaknesses: swotData.weaknesses,
+          opportunities: swotData.opportunities,
+          threats: swotData.threats
+        };
       } else if (selectedFramework.id === 'porter_5_forces') {
-        if (forcesData.newEntrants) cards.push({ dimension: 'New Entrants', name: 'New Entrants', value: forcesData.newEntrants });
-        if (forcesData.suppliers) cards.push({ dimension: 'Supplier Power', name: 'Supplier Power', value: forcesData.suppliers });
-        if (forcesData.buyers) cards.push({ dimension: 'Buyer Power', name: 'Buyer Power', value: forcesData.buyers });
-        if (forcesData.substitutes) cards.push({ dimension: 'Substitutes', name: 'Substitutes', value: forcesData.substitutes });
-        if (forcesData.rivalry) cards.push({ dimension: 'Competitive Rivalry', name: 'Competitive Rivalry', value: forcesData.rivalry });
+        frameworkData = {
+          forces: {
+            newEntrants: forcesData.newEntrants,
+            suppliers: forcesData.suppliers,
+            buyers: forcesData.buyers,
+            substitutes: forcesData.substitutes,
+            rivalry: forcesData.rivalry
+          }
+        };
       } else if (selectedFramework.id === 'bcg_matrix') {
-        bcgData.star.forEach(item => cards.push({ dimension: 'Star', name: item, value: item }));
-        bcgData.questionMark.forEach(item => cards.push({ dimension: 'Question Mark', name: item, value: item }));
-        bcgData.cashCow.forEach(item => cards.push({ dimension: 'Cash Cow', name: item, value: item }));
-        bcgData.dog.forEach(item => cards.push({ dimension: 'Dog', name: item, value: item }));
+        frameworkData = {
+          star: bcgData.star,
+          questionMark: bcgData.questionMark,
+          cashCow: bcgData.cashCow,
+          dog: bcgData.dog
+        };
       } else if (selectedFramework.id === 'ice_score' || selectedFramework.id === 'rice_score') {
-        ideasData.forEach(idea => {
-          cards.push({
-            dimension: 'Idea',
-            name: idea.name,
-            value: JSON.stringify(idea.scores)
-          });
-        });
+        frameworkData = {
+          ideas: ideasData
+        };
       }
 
       const analysisResponse = await fetch('/api/v1/decision/analyze', {
@@ -189,9 +193,11 @@ const GuidedDecisionFlow = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           goal: `${selectedFramework?.name} Analysis`,
-          options: ["Option A", "Option B"],
-          current_cards: cards,
+          options: ["분석 진행"],
+          current_cards: [],
           category: selectedFramework?.category || 'strategy',
+          framework_id: selectedFramework.id,
+          framework_data: frameworkData
         }),
       });
       const analysis = await analysisResponse.json();
@@ -423,43 +429,159 @@ const GuidedDecisionFlow = () => {
       {currentStep === 4 && analysisResult && (
         <div className="step-content">
           <h2>Step 4: Analysis Result</h2>
-          <p className="step-desc">프레임워크 기반 분석이 완료되었습니다</p>
+          <p className="step-desc">{analysisResult.framework || 'Decision Framework'} 분석이 완료되었습니다</p>
 
           <div className="result-sections">
-            {analysisResult.gaps && analysisResult.gaps.length > 0 && (
-              <div className="result-section">
-                <h4>Gap Analysis</h4>
-                <p>부족한 데이터: {analysisResult.gaps.length}개</p>
-                <div className="gaps-list">
-                  {analysisResult.gaps.slice(0, 3).map((gap, i) => (
-                    <div key={i} className="gap-item">
-                      <span className="gap-dim">{gap.dimension}</span>
-                      <span className="gap-priority">우선순위: {gap.priority.toFixed(2)}</span>
+            {/* SWOT Analysis Results */}
+            {analysisResult.framework === 'SWOT Analysis' && (
+              <>
+                <div className="result-section swot-position">
+                  <h4>🎯 전략적 위치</h4>
+                  <div className="position-zone">{analysisResult.position.zone}</div>
+                  <p>{analysisResult.position.description}</p>
+                  <div className="priority-label">우선순위: {analysisResult.position.priority}</div>
+                </div>
+
+                <div className="result-section">
+                  <h4>📊 SWOT 점수</h4>
+                  <div className="score-grid">
+                    <div className="score-item positive">
+                      <span className="score-label">Strengths</span>
+                      <span className="score-value">{analysisResult.scores.strengths}</span>
+                    </div>
+                    <div className="score-item negative">
+                      <span className="score-label">Weaknesses</span>
+                      <span className="score-value">{analysisResult.scores.weaknesses}</span>
+                    </div>
+                    <div className="score-item positive">
+                      <span className="score-label">Opportunities</span>
+                      <span className="score-value">{analysisResult.scores.opportunities}</span>
+                    </div>
+                    <div className="score-item negative">
+                      <span className="score-label">Threats</span>
+                      <span className="score-value">{analysisResult.scores.threats}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="result-section">
+                  <h4>💡 추천 전략</h4>
+                  {analysisResult.strategies.map((strategy, i) => (
+                    <div key={i} className={`strategy-item priority-${strategy.priority}`}>
+                      <strong>{strategy.type}:</strong> {strategy.description}
                     </div>
                   ))}
                 </div>
-              </div>
+
+                <div className="result-section">
+                  <h4>✅ 액션 아이템</h4>
+                  <ul className="action-list">
+                    {analysisResult.action_items.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
             )}
 
-            {analysisResult.recommendation && (
+            {/* Porter's 5 Forces Results */}
+            {analysisResult.framework === "Porter's 5 Forces" && (
+              <>
+                <div className="result-section">
+                  <h4>🏭 산업 분석</h4>
+                  <div className="industry-score">
+                    <div className="score-bar">
+                      <div
+                        className="score-fill"
+                        style={{ width: `${analysisResult.industry_analysis.attractiveness_score * 10}%` }}
+                      />
+                    </div>
+                    <div className="score-text">
+                      산업 매력도: {analysisResult.industry_analysis.attractiveness_score}/10
+                    </div>
+                    <p><strong>{analysisResult.industry_analysis.attractiveness_rating}</strong></p>
+                  </div>
+                </div>
+
+                <div className="result-section">
+                  <h4>📊 5 Forces 점수</h4>
+                  {Object.entries(analysisResult.force_scores).map(([key, force]) => (
+                    <div key={key} className="force-score-item">
+                      <div className="force-label">{force.label}</div>
+                      <div className="force-score-bar">
+                        <div
+                          className={`force-score-fill ${force.level}`}
+                          style={{ width: `${force.score * 10}%` }}
+                        />
+                      </div>
+                      <div className="force-score-text">{force.score}/10 ({force.level})</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="result-section">
+                  <h4>💡 전략 추천</h4>
+                  <ul className="action-list">
+                    {analysisResult.recommendations.map((rec, i) => (
+                      <li key={i}>{rec}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {/* BCG Matrix Results */}
+            {analysisResult.framework === 'BCG Matrix' && (
+              <>
+                <div className="result-section">
+                  <h4>📈 포트폴리오 건전성</h4>
+                  <div className="health-score">
+                    <div className="score-bar">
+                      <div
+                        className="score-fill"
+                        style={{ width: `${analysisResult.portfolio_health.score}%` }}
+                      />
+                    </div>
+                    <div className="score-text">
+                      {analysisResult.portfolio_health.score}/100 - {analysisResult.portfolio_health.rating}
+                    </div>
+                  </div>
+                  <ul className="issues-list">
+                    {analysisResult.portfolio_health.issues.map((issue, i) => (
+                      <li key={i}>{issue}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="result-section">
+                  <h4>🎯 포트폴리오 분포</h4>
+                  <div className="bcg-distribution">
+                    {Object.entries(analysisResult.portfolio_distribution).map(([quadrant, data]) => (
+                      <div key={quadrant} className={`bcg-quadrant ${quadrant}`}>
+                        <div className="quadrant-name">{quadrant.replace('_', ' ')}</div>
+                        <div className="quadrant-percentage">{data.percentage}%</div>
+                        <div className="quadrant-count">({data.count}개)</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="result-section">
+                  <h4>✅ 액션 플랜</h4>
+                  <ul className="action-list">
+                    {analysisResult.action_plan.map((action, i) => (
+                      <li key={i}>{action}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {/* Fallback for other frameworks */}
+            {analysisResult.recommendation && !analysisResult.framework && (
               <div className="result-section recommendation">
                 <h4>Recommendation</h4>
                 <p>{analysisResult.recommendation}</p>
-              </div>
-            )}
-
-            {analysisResult.tradeoff?.confidence && (
-              <div className="result-section">
-                <h4>Confidence Score</h4>
-                <div className="confidence-meter">
-                  <div
-                    className="confidence-bar"
-                    style={{ width: `${analysisResult.tradeoff.confidence.score}%` }}
-                  >
-                    <span>{analysisResult.tradeoff.confidence.score}%</span>
-                  </div>
-                </div>
-                <p>{analysisResult.tradeoff.confidence.message}</p>
               </div>
             )}
           </div>
